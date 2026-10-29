@@ -93,7 +93,7 @@ export function getUser() {
 }
 
 export function startGoogleLogin() {
-  window.location.assign(`${API_BASE_URL}/api/v2/dashboard/auth/google-login`);
+  window.location.href = `${API_BASE_URL}/api/v2/dashboard/auth/google-login`;
 }
 
 export async function apiRequest(path, options = {}) {
