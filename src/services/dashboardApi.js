@@ -40,21 +40,10 @@ function normalizeResource(resource, value) {
 
 function tokenFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  const hash = new URLSearchParams(window.location.hash.slice(1));
-  for (const key of ['access_token', 'accessToken', 'token', 'jwt', 'jwt_token']) {
-    const token = params.get(key) || hash.get(key);
-    if (token) {
-      params.delete(key);
-      hash.delete(key);
-      const query = params.toString();
-      const fragment = hash.toString();
-      window.history.replaceState(
-        {},
-        document.title,
-        `${window.location.pathname}${query ? `?${query}` : ''}${fragment ? `#${fragment}` : ''}`
-      );
-      return token;
-    }
+  const token = params.get('token');
+  if(token){
+    params.delete('token');
+    return token;
   }
   return null;
 }
@@ -63,8 +52,9 @@ export function getToken() {
   const returnedToken = tokenFromUrl();
   if (returnedToken) {
     localStorage.setItem(TOKEN_KEY, returnedToken);
+    return returnedToken;
   }
-  return returnedToken || localStorage.getItem(TOKEN_KEY);
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 export function clearToken() {
