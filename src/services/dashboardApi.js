@@ -39,21 +39,17 @@ function normalizeResource(resource, value) {
 }
 
 function tokenFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get('token');
   if(token){
-    params.delete('token');
-    return token;
+    localStorage.setItem(TOKEN_KEY, token);
+    url.searchParams.delete('token');
+    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
   }
-  return null;
 }
 
 export function getToken() {
-  const returnedToken = tokenFromUrl();
-  if (returnedToken) {
-    localStorage.setItem(TOKEN_KEY, returnedToken);
-    return returnedToken;
-  }
+  tokenFromUrl();
   return localStorage.getItem(TOKEN_KEY);
 }
 
