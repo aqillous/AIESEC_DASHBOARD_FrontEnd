@@ -6,7 +6,6 @@ const resources = [
   'events',
   'campaigns',
   'tasks',
-  'team',
   'analytics',
   'analytics_extra'
 ];
@@ -138,11 +137,34 @@ export async function loadDashboard() {
       dashboard?.[resource] ?? (resource === 'analytics' || resource === 'analytics_extra' ? {} : [])
     )
   ]));
-  return Object.fromEntries(resources.map((resource) => [resource, clone(baseline[resource])]));
+  return {
+    ...Object.fromEntries(resources.map((resource) => [resource, clone(baseline[resource])])),
+    team: clone(dashboard?.team ?? [])
+  };
 }
 
 export function loadCurrentDashboardUser() {
   return apiRequest('/api/v2/dashboard/auth/me');
+}
+
+export function createDashboardUser(data) {
+  return apiRequest('/api/v2/dashboard/auth/users', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export function updateDashboardUser(userId, data) {
+  return apiRequest(`/api/v2/dashboard/auth/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+export function deleteDashboardUser(userId) {
+  return apiRequest(`/api/v2/dashboard/auth/users/${encodeURIComponent(userId)}`, {
+    method: 'DELETE'
+  });
 }
 
 function equal(left, right) {

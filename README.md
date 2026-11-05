@@ -58,20 +58,26 @@ API access stay in their respective modules. Add new dashboard pages under
 
 ## Dashboard API
 
-The dashboard API is mounted at `/api/v2/dashboard`. Any authenticated
-platform user can read and update dashboard resources; replacing the `team`
-resource requires an MC admin.
+The dashboard API is mounted at `/api/v2/dashboard`. Authenticated dashboard
+users can read dashboard resources; admins manage users in the shared
+workspace. The dashboard roles MCVP, Team Leader, Content Creator, SMM,
+Reelsmaker, and Video Editor can edit resources but cannot manage members.
 
 | Resource | Data |
 | --- | --- |
-| `posts` | Post drafts, publishing status, assignment, approval, and comments |
+| `posts` | Post drafts, publishing status, assignment, approval, and comments, stored one row per post |
 | `ideas` | Idea text and vote count |
 | `events` | Single/range dates and promotion phases |
 | `campaigns` | Dates, platforms, status, conditions, and goals |
 | `tasks` | Assignment, due date, priority, and workflow status |
-| `team` | Team member names, email addresses, and roles |
+| `team` | Read-only view of the dashboard-user roster |
 | `analytics` | Per-platform follower and engagement metrics |
 | `analytics_extra` | Additional per-platform KPIs, groups, text, and tables |
+
+The Team Workspace roster is backed by `dashboard_user`; there is no separate
+Team model or membership table. All dashboard users belong to the shared
+workspace. The frontend reads the roster from the dashboard response and uses
+the dashboard user endpoints to add, edit, deactivate, or remove members.
 
 The Content Studio's existing deterministic tools are also available as
 authenticated endpoints: `POST /api/v2/dashboard/studio/hashtags` accepts
@@ -90,8 +96,12 @@ The frontend refetches the resource before a replacement and merges changes
 against the latest server value to reduce accidental overwrites when multiple
 people edit the dashboard.
 
-The data is stored in the `dashboard_document` table. Apply the migration with
-`alembic upgrade head` before using the endpoints. This backend does not import
+Other dashboard resources remain in `dashboard_document`; posts are stored in
+`dashboard_post` as individual rows linked to the document whose resource is
+`posts`. The database migration must create that table and backfill the old
+post JSON array before deploying. See the backend README for the required
+columns and index. No migration is generated or run here.
+This backend does not import
 data from the old Firebase project; the client or an import script must upload
 existing records through the authenticated resource endpoints. The frontend
 does not use Firebase Auth or Firestore.

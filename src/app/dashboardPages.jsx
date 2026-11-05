@@ -26,12 +26,22 @@ export const pageTitles = {
   ideas: 'Idea Bank'
 };
 
-export function DashboardPage({ page, data, save, isAdmin, confirm, onNavigate }) {
+export function DashboardPage({
+  page,
+  data,
+  save,
+  createMember,
+  updateMember,
+  deleteMember,
+  isAdmin,
+  confirm,
+  onNavigate
+}) {
   if (page === 'calendar') return <CalendarPage posts={data.posts} team={data.team} save={save} confirm={confirm} />;
   if (page === 'studio') return <StudioPage />;
   if (page === 'events') return <EventsPage events={data.events} save={save} confirm={confirm} />;
   if (page === 'campaigns') return <CampaignsPage campaigns={data.campaigns} save={save} confirm={confirm} />;
-  if (page === 'team') return <TeamTasksPage team={data.team} tasks={data.tasks} save={save} isAdmin={isAdmin} confirm={confirm} />;
+  if (page === 'team') return <TeamTasksPage team={data.team} tasks={data.tasks} save={save} createMember={createMember} updateMember={updateMember} deleteMember={deleteMember} isAdmin={isAdmin} confirm={confirm} />;
   if (page === 'analytics-overview') return <AnalyticsPage analytics={data.analytics} extra={data.analytics_extra} save={save} />;
   if (page.startsWith('analytics-')) return <AnalyticsPage analytics={data.analytics} extra={data.analytics_extra} save={save} platform={page.slice('analytics-'.length)} />;
   if (page === 'ideas') return <IdeasPage ideas={data.ideas} save={save} />;

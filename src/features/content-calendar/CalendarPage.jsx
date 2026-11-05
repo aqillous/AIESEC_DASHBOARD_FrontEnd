@@ -96,9 +96,9 @@ function PostForm({ post, team, onClose, onSave }) {
             onChange={(e) => set("assignee", e.target.value)}
           >
             <option value="">Unassigned</option>
-            {team.map((member) => (
-              <option key={member.id} value={member.name}>
-                {member.name}
+            {team.filter((member) => member.is_active).map((member) => (
+              <option key={member.id} value={member.full_name}>
+                {member.full_name}
               </option>
             ))}
           </Select>
