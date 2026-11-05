@@ -6,7 +6,6 @@ const resources = [
   'events',
   'campaigns',
   'tasks',
-  'team',
   'analytics',
   'analytics_extra'
 ];
@@ -39,32 +38,18 @@ function normalizeResource(resource, value) {
 }
 
 function tokenFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const hash = new URLSearchParams(window.location.hash.slice(1));
-  for (const key of ['access_token', 'accessToken', 'token', 'jwt', 'jwt_token']) {
-    const token = params.get(key) || hash.get(key);
-    if (token) {
-      params.delete(key);
-      hash.delete(key);
-      const query = params.toString();
-      const fragment = hash.toString();
-      window.history.replaceState(
-        {},
-        document.title,
-        `${window.location.pathname}${query ? `?${query}` : ''}${fragment ? `#${fragment}` : ''}`
-      );
-      return token;
-    }
+  const url = new URL(window.location.href);
+  const token = url.searchParams.get('token');
+  if(token){
+    localStorage.setItem(TOKEN_KEY, token);
+    url.searchParams.delete('token');
+    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
   }
-  return null;
 }
 
 export function getToken() {
-  const returnedToken = tokenFromUrl();
-  if (returnedToken) {
-    localStorage.setItem(TOKEN_KEY, returnedToken);
-  }
-  return returnedToken || localStorage.getItem(TOKEN_KEY);
+  tokenFromUrl();
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 export function clearToken() {
@@ -93,7 +78,7 @@ export function getUser() {
 }
 
 export function startGoogleLogin() {
-  window.location.assign(`${API_BASE_URL}/api/v2/dashboard/auth/google-login`);
+  window.location.href = `${API_BASE_URL}/api/v2/dashboard/auth/google-login`;
 }
 
 export async function apiRequest(path, options = {}) {
@@ -152,11 +137,34 @@ export async function loadDashboard() {
       dashboard?.[resource] ?? (resource === 'analytics' || resource === 'analytics_extra' ? {} : [])
     )
   ]));
-  return Object.fromEntries(resources.map((resource) => [resource, clone(baseline[resource])]));
+  return {
+    ...Object.fromEntries(resources.map((resource) => [resource, clone(baseline[resource])])),
+    team: clone(dashboard?.team ?? [])
+  };
 }
 
 export function loadCurrentDashboardUser() {
   return apiRequest('/api/v2/dashboard/auth/me');
+}
+
+export function createDashboardUser(data) {
+  return apiRequest('/api/v2/dashboard/auth/users', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export function updateDashboardUser(userId, data) {
+  return apiRequest(`/api/v2/dashboard/auth/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+export function deleteDashboardUser(userId) {
+  return apiRequest(`/api/v2/dashboard/auth/users/${encodeURIComponent(userId)}`, {
+    method: 'DELETE'
+  });
 }
 
 function equal(left, right) {

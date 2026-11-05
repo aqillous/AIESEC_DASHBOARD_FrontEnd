@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   clearToken,
+  createDashboardUser,
+  deleteDashboardUser,
   getResourceBaseline,
   getToken,
   getUser,
   loadCurrentDashboardUser,
   loadDashboard,
-  replaceResource
+  replaceResource,
+  updateDashboardUser
 } from '../services/dashboardApi.js';
 
 const emptyData = {
@@ -71,6 +74,47 @@ export function useDashboardData(notify) {
     }
   }, [notify]);
 
+  const createMember = useCallback(async (newMember) => {
+    try {
+      const member = await createDashboardUser(newMember);
+      setData((current) => ({ ...current, team: [...current.team, member] }));
+      setError('');
+      return member;
+    } catch (requestError) {
+      notify(requestError.message);
+      throw requestError;
+    }
+  }, [notify]);
+
+  const updateMember = useCallback(async (userId, updates) => {
+    try {
+      const member = await updateDashboardUser(userId, updates);
+      setData((current) => ({
+        ...current,
+        team: current.team.map((item) => item.id === member.id ? member : item)
+      }));
+      setError('');
+      return member;
+    } catch (requestError) {
+      notify(requestError.message);
+      throw requestError;
+    }
+  }, [notify]);
+
+  const deleteMember = useCallback(async (userId) => {
+    try {
+      await deleteDashboardUser(userId);
+      setData((current) => ({
+        ...current,
+        team: current.team.filter((item) => item.id !== userId)
+      }));
+      setError('');
+    } catch (requestError) {
+      notify(requestError.message);
+      throw requestError;
+    }
+  }, [notify]);
+
   const signOut = useCallback(() => {
     clearToken();
     setUser(null);
@@ -85,6 +129,9 @@ export function useDashboardData(notify) {
     error,
     setError,
     save,
+    createMember,
+    updateMember,
+    deleteMember,
     signOut
   };
 }

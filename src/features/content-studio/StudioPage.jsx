@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Badge, Button, Card, Field, Select, Textarea } from '../../components/ui/index.jsx';
-import { ViewTitle } from '../../components/shared/dashboard-primitives.jsx';
+import { ViewTitle, PLATFORMS } from '../../components/shared/dashboard-primitives.jsx';
 
 export function StudioPage() {
   const [text, setText] = useState("");

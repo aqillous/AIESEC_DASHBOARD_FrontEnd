@@ -3,16 +3,32 @@ import RecordForm from '../../components/forms/RecordForm.jsx';
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Textarea } from '../../components/ui/index.jsx';
 import { dateLabel, id, StatusBadge, ViewTitle } from '../../components/shared/dashboard-primitives.jsx';
 
-export function TeamTasksPage({ team, tasks, save, isAdmin, confirm }) {
+export function TeamTasksPage({
+  team,
+  tasks,
+  save,
+  createMember,
+  updateMember,
+  deleteMember: removeMember,
+  isAdmin,
+  confirm
+}) {
   const [memberEditor, setMemberEditor] = useState(null);
   const [taskEditor, setTaskEditor] = useState(null);
   const memberFields = [
-    { name: "name", label: "Full name", required: true },
-    { name: "email", label: "Email", type: "email" },
+    { name: "full_name", label: "Full name", required: true },
+    {
+      name: "email",
+      label: "Email",
+      type: "email",
+      required: true,
+      show: () => !memberEditor?.id,
+    },
     {
       name: "role",
       label: "Role",
       options: [
+        ["admin", "Admin"],
         ["MCVP", "MCVP"],
         ["Team Leader", "Team Leader"],
         ["Content Creator", "Content Creator"],
@@ -20,6 +36,12 @@ export function TeamTasksPage({ team, tasks, save, isAdmin, confirm }) {
         ["Reelsmaker", "Reelsmaker"],
         ["Video Editor", "Video Editor"],
       ],
+    },
+    {
+      name: "is_active",
+      label: "Account status",
+      options: [["true", "Active"], ["false", "Inactive"]],
+      show: () => Boolean(memberEditor?.id),
     },
   ];
   const taskFields = [
@@ -30,7 +52,9 @@ export function TeamTasksPage({ team, tasks, save, isAdmin, confirm }) {
       label: "Assigned to",
       options: [
         ["", "Unassigned"],
-        ...team.map((member) => [member.name, member.name]),
+        ...team
+          .filter((member) => member.is_active)
+          .map((member) => [member.full_name, member.full_name]),
       ],
     },
     { name: "due", label: "Due date", type: "date" },
@@ -54,13 +78,19 @@ export function TeamTasksPage({ team, tasks, save, isAdmin, confirm }) {
     },
   ];
   async function saveMember(form) {
-    const member = { ...form, id: memberEditor.id || id("member") };
-    await save(
-      "team",
-      memberEditor.id
-        ? team.map((item) => (item.id === member.id ? member : item))
-        : [...team, member],
-    );
+    if (memberEditor.id) {
+      await updateMember(memberEditor.id, {
+        full_name: form.full_name.trim(),
+        role: form.role,
+        is_active: form.is_active === "true",
+      });
+      return;
+    }
+    await createMember({
+      full_name: form.full_name.trim(),
+      email: form.email.trim(),
+      role: form.role,
+    });
   }
   async function saveTask(form) {
     const task = {
@@ -78,11 +108,13 @@ export function TeamTasksPage({ team, tasks, save, isAdmin, confirm }) {
     );
   }
   async function deleteMember(member) {
-    if (await confirm(`Remove ${member.name} from the team?`))
-      await save(
-        "team",
-        team.filter((item) => item.id !== member.id),
-      );
+    if (await confirm(`Remove ${member.full_name} from the workspace?`)) {
+      try {
+        await removeMember(member.id);
+      } catch {
+        return;
+      }
+    }
   }
   async function deleteTask(task) {
     if (await confirm(`Delete task “${task.title}”?`))
@@ -105,15 +137,15 @@ export function TeamTasksPage({ team, tasks, save, isAdmin, confirm }) {
         description="Roles, members, tasks and assignments for the whole team."
       >
         {isAdmin && (
-          <Button onClick={() => setMemberEditor({ role: "Content Creator" })}>
+          <Button onClick={() => setMemberEditor({ role: "SMM" })}>
             ＋ Add member
           </Button>
         )}
       </ViewTitle>
       {!isAdmin && (
         <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Only an MC admin can replace the team roster. Everyone can view the
-          team and manage tasks.
+          Only an admin can manage workspace members. Everyone can view the
+          roster and manage tasks.
         </p>
       )}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -121,23 +153,31 @@ export function TeamTasksPage({ team, tasks, save, isAdmin, confirm }) {
           team.map((member) => (
             <Card key={member.id} className="flex items-center gap-3 p-4">
               <span className="grid size-11 shrink-0 place-items-center rounded-full bg-blue-700 font-bold text-white">
-                {member.name?.[0]?.toUpperCase() || "?"}
+                {member.full_name?.[0]?.toUpperCase() || "?"}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-extrabold text-slate-900">
-                  {member.name}
+                  {member.full_name}
                 </p>
                 <p className="truncate text-xs text-slate-500">
                   {member.email}
                 </p>
-                <Badge color="blue">{member.role}</Badge>
+                <div className="mt-1 flex gap-1">
+                  <Badge color="blue">{member.role}</Badge>
+                  <Badge color={member.is_active ? "green" : "slate"}>
+                    {member.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
               </div>
               {isAdmin && (
                 <div className="flex gap-1">
                   <Button
                     size="sm"
                     variant="subtle"
-                    onClick={() => setMemberEditor(member)}
+                    onClick={() => setMemberEditor({
+                      ...member,
+                      is_active: String(member.is_active),
+                    })}
                   >
                     Edit
                   </Button>
